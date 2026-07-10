@@ -46,8 +46,23 @@ npm install
      - `http://localhost:3000/auth/update-password` ← password reset
      - `http://localhost:3000/auth/callback` ← optional legacy shim
      - Matching production URLs for each of the above
+     - Production examples:
+       - `https://web-amber-psi-27.vercel.app/api/auth/callback`
+       - `https://tiktokshopguard.com/api/auth/callback` (if that domain points at this app)
 
-### 3. Set up Stripe
+### 3. Set up Resend (transactional email)
+
+1. In [Resend Domains](https://resend.com/domains), add **`mail.tiktokshopguard.com`**
+2. Copy the DNS records Resend shows (SPF, DKIM, and optionally DMARC) into your DNS provider
+3. Click **Verify** in Resend until the domain status is **Verified**
+4. Set env vars:
+   - `RESEND_API_KEY` — from Resend → API Keys
+   - `RESEND_FROM_EMAIL=support@mail.tiktokshopguard.com`
+5. Test while signed in: `POST /api/email/send` with `{ "to": "you@example.com" }`
+
+Until the domain is verified, Resend will reject sends from `support@mail.tiktokshopguard.com`.
+
+### 4. Set up Stripe
 
 1. Create products and recurring prices in the [Stripe Dashboard](https://dashboard.stripe.com)
 2. Copy the price IDs for Starter and Pro plans
@@ -57,7 +72,7 @@ npm install
 stripe listen --forward-to localhost:3000/api/stripe/webhook
 ```
 
-### 4. Configure environment variables
+### 5. Configure environment variables
 
 Copy `.env.example` to `.env.local` and fill in your values:
 
@@ -65,7 +80,7 @@ Copy `.env.example` to `.env.local` and fill in your values:
 cp .env.example .env.local
 ```
 
-### 5. Run the dev server
+### 6. Run the dev server
 
 ```bash
 npm run dev
@@ -77,9 +92,11 @@ Open [http://localhost:3000](http://localhost:3000).
 
 See `.env.example` for the full list. Required variables:
 
-- `NEXT_PUBLIC_SUPABASE_URL` — Supabase project URL (`https://<ref>.supabase.co`)
-- `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` — Supabase publishable key (or legacy `NEXT_PUBLIC_SUPABASE_ANON_KEY`)
+- `NEXT_PUBLIC_SUPABASE_URL` — Supabase project URL (`https://<ref>.supabase.co` only — never concatenate a key)
+- `NEXT_PUBLIC_SUPABASE_ANON_KEY` — Legacy anon JWT (preferred for browser Auth)
+- `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` — Optional newer publishable key (fallback if anon unset)
 - `SUPABASE_SERVICE_ROLE_KEY` — Service role key (webhooks only, server-side)
+- `RESEND_API_KEY` / `RESEND_FROM_EMAIL` — Transactional email (`support@mail.tiktokshopguard.com`)
 - `STRIPE_SECRET_KEY` — Stripe secret key
 - `STRIPE_WEBHOOK_SECRET` — Webhook signing secret
 - `STRIPE_STARTER_PRICE_ID` / `STRIPE_PRO_PRICE_ID`

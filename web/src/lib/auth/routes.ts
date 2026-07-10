@@ -21,6 +21,7 @@ export const PROTECTED_ROUTE_PREFIXES = [
   "/api/violations",
 ] as const;
 
+/** Routes that must bypass auth redirects (webhooks + auth callbacks + signout). */
 export const PUBLIC_API_PREFIXES = [
   "/api/stripe/webhook",
   AUTH_CALLBACK_PATH,

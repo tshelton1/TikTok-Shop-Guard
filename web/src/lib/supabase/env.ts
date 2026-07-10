@@ -31,6 +31,17 @@ export function getSupabaseUrl(): string {
     process.env.NEXT_PUBLIC_SUPABASE_URL,
   );
 
+  // Catch accidental URL+key concatenation (common copy/paste mistake).
+  if (
+    raw.includes("eyJ") ||
+    raw.includes("sb_publishable_") ||
+    raw.includes("NEXT_PUBLIC_")
+  ) {
+    throw new Error(
+      "NEXT_PUBLIC_SUPABASE_URL looks malformed (includes a key or env var name). Use only https://<project-ref>.supabase.co",
+    );
+  }
+
   let url: URL;
   try {
     url = new URL(raw);
@@ -46,26 +57,42 @@ export function getSupabaseUrl(): string {
     );
   }
 
-  // Guard against values like "https://NEXT_PUBLIC_SUPABASE_URL"
+  if (url.pathname !== "/" && url.pathname !== "") {
+    throw new Error(
+      `NEXT_PUBLIC_SUPABASE_URL must be the project origin only (no path). Got "${raw}".`,
+    );
+  }
+
+  if (url.search || url.hash) {
+    throw new Error(
+      `NEXT_PUBLIC_SUPABASE_URL must not include query params or a hash. Got "${raw}".`,
+    );
+  }
+
   if (ENV_NAME_RE.test(url.hostname) || url.hostname.includes("NEXT_PUBLIC_")) {
     throw new Error(
       `NEXT_PUBLIC_SUPABASE_URL looks like an env var name was pasted as the host (got "${raw}").`,
     );
   }
 
-  return raw.replace(/\/+$/, "");
+  return `${url.protocol}//${url.host}`;
 }
 
 /**
- * Prefer the new publishable key; fall back to legacy anon JWT.
+ * Browser/server public key for Supabase Auth.
+ *
+ * Prefer the legacy anon JWT when present. New `sb_publishable_...` keys are
+ * not JWTs; supabase-js still sends them as `Authorization: Bearer ...`, which
+ * can make Auth requests fail in the browser as "Load Failed" / "Failed to fetch".
+ * Fall back to the publishable key only when anon is unset.
  */
 export function getSupabasePublishableKey(): string {
   const key =
-    trimEnv(process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY) ??
-    trimEnv(process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY);
+    trimEnv(process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) ??
+    trimEnv(process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY);
 
   return requireEnvValue(
-    "NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY (or NEXT_PUBLIC_SUPABASE_ANON_KEY)",
+    "NEXT_PUBLIC_SUPABASE_ANON_KEY (or NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY)",
     key,
   );
 }
@@ -77,13 +104,21 @@ export function getSupabaseServiceRoleKey(): string {
   );
 }
 
-/** Canonical email-confirm / OAuth code exchange route. */
+/**
+ * Canonical email-confirm / OAuth code exchange route.
+ * Must match Supabase Auth → URL Configuration redirect allowlist.
+ */
 export const AUTH_CALLBACK_PATH = "/api/auth/callback" as const;
 
 /** Legacy path still allowlisted in some Supabase projects; redirects to AUTH_CALLBACK_PATH. */
 export const AUTH_CALLBACK_LEGACY_PATH = "/auth/callback" as const;
 
 export const PASSWORD_UPDATE_PATH = "/auth/update-password" as const;
+
+export const AUTH_CALLBACK_PATHS = [
+  AUTH_CALLBACK_PATH,
+  AUTH_CALLBACK_LEGACY_PATH,
+] as const;
 
 function normalizeOrigin(origin: string): string {
   return origin.replace(/\/+$/, "");
@@ -99,4 +134,10 @@ export function getAuthCallbackUrl(origin: string): string {
 
 export function getPasswordUpdateUrl(origin: string): string {
   return `${normalizeOrigin(origin)}${PASSWORD_UPDATE_PATH}`;
+}
+
+export function isAuthCallbackPath(pathname: string): boolean {
+  return AUTH_CALLBACK_PATHS.some(
+    (path) => pathname === path || pathname.startsWith(`${path}/`),
+  );
 }

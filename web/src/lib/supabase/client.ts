@@ -8,6 +8,7 @@ import {
 
 /**
  * Browser Supabase client for Client Components (auth forms, sign-out).
+ * Call inside event handlers / effects — not during render.
  */
 export function createClient() {
   return createBrowserClient<Database>(

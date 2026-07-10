@@ -68,7 +68,6 @@ export function AuthForm({ mode }: AuthFormProps) {
   const redirect = getSafeRedirectPath(searchParams.get("redirect"));
   const selectedPlan = searchParams.get("plan");
   const authError = searchParams.get("error");
-  const supabase = createClient();
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -116,6 +115,8 @@ export function AuthForm({ mode }: AuthFormProps) {
     }
 
     try {
+      const supabase = createClient();
+
       if (mode === "login") {
         const { error: signInError } = await supabase.auth.signInWithPassword({
           email,
@@ -137,6 +138,7 @@ export function AuthForm({ mode }: AuthFormProps) {
               full_name: fullName,
               shop_name: shopName.trim() || undefined,
             },
+            // Canonical exchange is /api/auth/callback; /auth/callback redirects there.
             emailRedirectTo: getAuthCallbackUrl(window.location.origin),
           },
         });
@@ -164,11 +166,17 @@ export function AuthForm({ mode }: AuthFormProps) {
     } catch (err) {
       const message =
         err instanceof Error ? err.message : "Something went wrong.";
-      const friendly =
-        message === "Failed to fetch"
-          ? "Could not reach the auth server. Check your connection, disable blockers for supabase.co, and confirm NEXT_PUBLIC_SUPABASE_URL is set."
-          : message.includes("Database error saving new user")
-            ? "Account creation failed in the database (signup trigger). Run migration 009_canonicalize_profiles_auth.sql in the Supabase SQL editor, then try again."
+      const networkFailure =
+        message === "Failed to fetch" ||
+        message === "Load failed" ||
+        message === "Load Failed" ||
+        message.toLowerCase().includes("networkerror");
+      const friendly = networkFailure
+        ? "Could not reach Supabase Auth. Use NEXT_PUBLIC_SUPABASE_ANON_KEY (JWT anon key) in .env.local, restart the dev server, and allow supabase.co in any content blockers."
+        : message.includes("Database error saving new user")
+          ? "Account creation failed in the database (signup trigger). Run migration 009b_fix_profiles_user_id.sql in the Supabase SQL editor, then try again."
+          : message.includes("null value in column \"user_id\"")
+            ? "Account creation failed: profiles.user_id is required. Run migration 009b_fix_profiles_user_id.sql in the Supabase SQL editor, then try again."
             : message;
       setError(friendly);
       showError(friendly);

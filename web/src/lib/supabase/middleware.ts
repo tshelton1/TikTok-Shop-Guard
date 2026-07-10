@@ -9,13 +9,16 @@ import {
 import {
   getSupabasePublishableKey,
   getSupabaseUrl,
+  isAuthCallbackPath,
 } from "@/lib/supabase/env";
 import type { Database } from "@/types/database";
 
 export async function updateSession(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
-  if (isPublicApiRoute(pathname)) {
+  // Never block or rewrite auth callbacks — they must reach the route handlers
+  // that exchange the `code` for a session.
+  if (isAuthCallbackPath(pathname) || isPublicApiRoute(pathname)) {
     return NextResponse.next({ request });
   }
 

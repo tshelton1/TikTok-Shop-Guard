@@ -112,8 +112,6 @@ export function AuthForm({ mode }: AuthFormProps) {
     }
 
     try {
-      const authCallbackUrl = `${window.location.origin}/api/auth/callback`;
-
       if (mode === "login") {
         const { error: signInError } = await supabase.auth.signInWithPassword({
           email,
@@ -135,7 +133,7 @@ export function AuthForm({ mode }: AuthFormProps) {
               full_name: fullName,
               shop_name: shopName.trim() || undefined,
             },
-            emailRedirectTo: `${authCallbackUrl}?next=${encodeURIComponent(redirect)}`,
+            emailRedirectTo: `${window.location.origin}/auth/callback`,
           },
         });
         if (signUpError) throw signUpError;

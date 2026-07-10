@@ -153,7 +153,7 @@ export function AuthForm({ mode }: AuthFormProps) {
       const { error: resetError } = await supabase.auth.resetPasswordForEmail(
         email,
         {
-          redirectTo: `${authCallbackUrl}?next=${encodeURIComponent("/reset-password")}`,
+          redirectTo: `${window.location.origin}/auth/update-password`,
         },
       );
       if (resetError) throw resetError;

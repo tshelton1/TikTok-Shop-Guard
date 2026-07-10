@@ -39,7 +39,10 @@ npm install
 3. Enable **Email** auth provider under Authentication → Providers
 4. Add your site URL and redirect URLs under Authentication → URL Configuration:
    - Site URL: `http://localhost:3000`
-   - Redirect URLs: `http://localhost:3000/auth/callback`
+   - Redirect URLs:
+     - `http://localhost:3000/auth/callback`
+     - `http://localhost:3000/auth/update-password`
+     - `http://localhost:3000/api/auth/callback`
 
 ### 3. Set up Stripe
 

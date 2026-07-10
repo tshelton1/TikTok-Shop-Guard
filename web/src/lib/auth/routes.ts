@@ -1,6 +1,10 @@
 export const GUEST_ONLY_ROUTES = ["/login", "/signup", "/forgot-password"] as const;
 
-export const AUTH_ROUTES = [...GUEST_ONLY_ROUTES, "/reset-password"] as const;
+export const AUTH_ROUTES = [
+  ...GUEST_ONLY_ROUTES,
+  "/reset-password",
+  "/auth/update-password",
+] as const;
 
 export const PROTECTED_ROUTE_PREFIXES = [
   "/dashboard",

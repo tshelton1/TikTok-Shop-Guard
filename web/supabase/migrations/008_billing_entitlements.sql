@@ -96,7 +96,7 @@ $$;
 grant execute on function public.update_profile_billing(uuid, text, text, text, text, text, timestamptz) to service_role;
 grant execute on function public.increment_scan_usage(uuid) to service_role;
 
--- Signup: start 14-day free trial
+-- Signup: profiles + default shop. Membership via on_shop_created → handle_new_shop.
 create or replace function public.handle_new_user()
 returns trigger
 language plpgsql
@@ -104,7 +104,6 @@ security definer
 set search_path = public
 as $$
 declare
-  v_shop_id uuid;
   v_shop_name text;
 begin
   insert into public.profiles (
@@ -122,11 +121,12 @@ begin
     'trial',
     'trialing',
     now() + interval '14 days'
-  );
-
-  insert into public.users (id, status, role)
-  values (new.id, 'active', 'owner')
-  on conflict (id) do nothing;
+  )
+  on conflict (id) do update
+    set
+      email = excluded.email,
+      full_name = excluded.full_name,
+      updated_at = now();
 
   v_shop_name := coalesce(
     nullif(trim(new.raw_user_meta_data->>'shop_name'), ''),
@@ -134,12 +134,13 @@ begin
   );
 
   insert into public.shops (owner_user_id, name, platform)
-  values (new.id, v_shop_name, 'tiktok')
-  returning id into v_shop_id;
-
-  insert into public.shop_members (shop_id, user_id, role, status)
-  values (v_shop_id, new.id, 'owner', 'active');
+  values (new.id, v_shop_name, 'tiktok_shop');
 
   return new;
 end;
 $$;
+
+drop trigger if exists on_auth_user_created on auth.users;
+create trigger on_auth_user_created
+  after insert on auth.users
+  for each row execute function public.handle_new_user();

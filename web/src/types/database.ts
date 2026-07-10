@@ -9,6 +9,7 @@ export type SubscriptionStatus =
 export type UserStatus = "active" | "invited" | "suspended" | "deleted";
 export type ShopStatus = "active" | "paused" | "disabled";
 
+/** Display profile fields (sourced from canonical `profiles` table). */
 export type UserProfile = {
   id: string;
   email: string | null;
@@ -17,7 +18,7 @@ export type UserProfile = {
   updated_at: string;
 };
 
-/** @deprecated Use UserProfile — kept for billing integrations on `profiles` table */
+/** Canonical billing-aware profile (`public.profiles`). */
 export type Profile = UserProfile & {
   stripe_customer_id: string | null;
   subscription_status: SubscriptionStatus;
@@ -27,8 +28,6 @@ export type Profile = UserProfile & {
   trial_ends_at: string | null;
   scans_used_this_period: number;
   usage_period_start: string;
-  created_at: string;
-  updated_at: string;
 };
 
 export type Shop = {
@@ -153,7 +152,6 @@ export type AppealDocumentRow = {
 export type Database = {
   public: {
     Tables: {
-      users_profile: TableDef<UserProfile, Partial<UserProfile> & { id: string }>;
       profiles: TableDef<Profile, Partial<Profile> & { id: string }>;
       shops: TableDef<Shop>;
       shop_members: TableDef<ShopMember, Partial<ShopMember>, Partial<ShopMember>, ShopMemberRelationships>;

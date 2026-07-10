@@ -35,14 +35,17 @@ npm install
 
 1. Create a project at [supabase.com](https://supabase.com)
 2. Run the migrations in order via the SQL editor:
-   - `supabase/migrations/001_profiles.sql` through `008_billing_entitlements.sql`
+   - Prefer: `001_profiles.sql` → `002_core_domain.sql` → `003_rls_and_shop_auth.sql` → remaining files through `009_canonicalize_profiles_auth.sql`
+   - Skip deprecated `001_initial.sql` on new projects (it kept a competing `users_profile` path)
+   - On an existing project that already ran older migrations, run **`009_canonicalize_profiles_auth.sql`** to fix signup triggers and FKs
 3. Enable **Email** auth provider under Authentication → Providers
 4. Add your site URL and redirect URLs under Authentication → URL Configuration:
-   - Site URL: `http://localhost:3000`
+   - Site URL: `http://localhost:3000` (and your production URL)
    - Redirect URLs:
      - `http://localhost:3000/auth/callback`
      - `http://localhost:3000/auth/update-password`
      - `http://localhost:3000/api/auth/callback`
+     - Matching production URLs for each of the above
 
 ### 3. Set up Stripe
 

@@ -52,7 +52,18 @@ const stats = [
   { value: "24/7", label: "Shop monitoring" },
 ];
 
-export default function HomePage() {
+type HomePageProps = {
+  searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
+};
+
+export default async function HomePage({ searchParams }: HomePageProps) {
+  const resolvedSearchParams = await searchParams;
+  const query = resolvedSearchParams.query;
+  const signupHref =
+    typeof query === "string"
+      ? `/signup?plan=${encodeURIComponent(query)}`
+      : "/signup";
+
   return (
     <PublicLayout>
       <section className="border-b bg-muted/30 px-6 py-24">
@@ -71,7 +82,7 @@ export default function HomePage() {
             </p>
             <div className="mt-10 flex flex-col items-center justify-center gap-4 sm:flex-row">
               <Button asChild variant="brand" size="lg">
-                <Link href="/signup">
+                <Link href={signupHref}>
                   Start free trial
                   <ArrowRight className="h-4 w-4" />
                 </Link>
@@ -138,7 +149,7 @@ export default function HomePage() {
             strikes.
           </p>
           <Button asChild variant="brand" size="lg" className="mt-8">
-            <Link href="/signup">Create your account</Link>
+            <Link href={signupHref}>Create your account</Link>
           </Button>
         </div>
       </section>

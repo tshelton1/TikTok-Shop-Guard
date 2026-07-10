@@ -40,11 +40,11 @@ npm install
    - On an existing project that already ran older migrations, run **`009_canonicalize_profiles_auth.sql`** to fix signup triggers and FKs
 3. Enable **Email** auth provider under Authentication → Providers
 4. Add your site URL and redirect URLs under Authentication → URL Configuration:
-   - Site URL: `http://localhost:3000` (and your production URL)
-   - Redirect URLs:
-     - `http://localhost:3000/auth/callback`
-     - `http://localhost:3000/auth/update-password`
-     - `http://localhost:3000/api/auth/callback`
+   - Site URL: `http://localhost:3000` (use your production origin in prod)
+   - Redirect URLs (allowlist both localhost and production):
+     - `http://localhost:3000/api/auth/callback` ← canonical (signup / email confirm)
+     - `http://localhost:3000/auth/update-password` ← password reset
+     - `http://localhost:3000/auth/callback` ← optional legacy shim
      - Matching production URLs for each of the above
 
 ### 3. Set up Stripe
@@ -77,8 +77,8 @@ Open [http://localhost:3000](http://localhost:3000).
 
 See `.env.example` for the full list. Required variables:
 
-- `NEXT_PUBLIC_SUPABASE_URL` — Supabase project URL
-- `NEXT_PUBLIC_SUPABASE_ANON_KEY` — Supabase anon key
+- `NEXT_PUBLIC_SUPABASE_URL` — Supabase project URL (`https://<ref>.supabase.co`)
+- `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` — Supabase publishable key (or legacy `NEXT_PUBLIC_SUPABASE_ANON_KEY`)
 - `SUPABASE_SERVICE_ROLE_KEY` — Service role key (webhooks only, server-side)
 - `STRIPE_SECRET_KEY` — Stripe secret key
 - `STRIPE_WEBHOOK_SECRET` — Webhook signing secret

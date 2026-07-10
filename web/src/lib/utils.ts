@@ -11,5 +11,6 @@ export function getURL() {
     process.env.NEXT_PUBLIC_VERCEL_URL ??
     "http://localhost:3000";
 
-  return url.startsWith("http") ? url : `https://${url}`;
+  const withProtocol = url.startsWith("http") ? url : `https://${url}`;
+  return withProtocol.replace(/\/+$/, "");
 }

@@ -18,6 +18,10 @@ import { getSafeRedirectPath } from "@/lib/auth/redirect";
 import { showError, showSuccess } from "@/lib/toast";
 import { createClient } from "@/lib/supabase/client";
 import {
+  getAuthCallbackUrl,
+  getPasswordUpdateUrl,
+} from "@/lib/supabase/env";
+import {
   hasFieldErrors,
   validateEmail,
   validateLoginForm,
@@ -133,7 +137,7 @@ export function AuthForm({ mode }: AuthFormProps) {
               full_name: fullName,
               shop_name: shopName.trim() || undefined,
             },
-            emailRedirectTo: `${window.location.origin}/auth/callback`,
+            emailRedirectTo: getAuthCallbackUrl(window.location.origin),
           },
         });
         if (signUpError) throw signUpError;
@@ -151,7 +155,7 @@ export function AuthForm({ mode }: AuthFormProps) {
       const { error: resetError } = await supabase.auth.resetPasswordForEmail(
         email,
         {
-          redirectTo: `${window.location.origin}/auth/update-password`,
+          redirectTo: getPasswordUpdateUrl(window.location.origin),
         },
       );
       if (resetError) throw resetError;

@@ -3,13 +3,18 @@ import { cookies } from "next/headers";
 
 import type { Database } from "@/types/database";
 import type { UserProfile } from "@/types/database";
+import { ensureBillingProfile } from "@/lib/billing/profile";
+import {
+  getSupabasePublishableKey,
+  getSupabaseUrl,
+} from "@/lib/supabase/env";
 
 export async function createClient() {
   const cookieStore = await cookies();
 
   return createServerClient<Database>(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    getSupabaseUrl(),
+    getSupabasePublishableKey(),
     {
       cookies: {
         getAll() {
@@ -65,8 +70,6 @@ export async function getUserProfile(): Promise<UserProfile | null> {
 
   return profile;
 }
-
-import { ensureBillingProfile } from "@/lib/billing/profile";
 
 /** Billing-aware profile (`profiles` table). */
 export async function getProfile() {

@@ -1,11 +1,14 @@
 import { NextResponse } from "next/server";
 
+import { AUTH_CALLBACK_PATH } from "@/lib/supabase/env";
+
 /**
- * @deprecated Use /api/auth/callback — kept for existing Supabase redirect URLs.
+ * Legacy redirect shim for older Supabase allowlisted URLs.
+ * Canonical callback is AUTH_CALLBACK_PATH (`/api/auth/callback`).
  */
 export async function GET(request: Request) {
   const url = new URL(request.url);
-  const target = new URL("/api/auth/callback", url.origin);
+  const target = new URL(AUTH_CALLBACK_PATH, url.origin);
   target.search = url.search;
   return NextResponse.redirect(target);
 }

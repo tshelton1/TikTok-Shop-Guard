@@ -1,3 +1,8 @@
+import {
+  AUTH_CALLBACK_LEGACY_PATH,
+  AUTH_CALLBACK_PATH,
+} from "@/lib/supabase/env";
+
 export const GUEST_ONLY_ROUTES = ["/login", "/signup", "/forgot-password"] as const;
 
 export const AUTH_ROUTES = [
@@ -18,8 +23,8 @@ export const PROTECTED_ROUTE_PREFIXES = [
 
 export const PUBLIC_API_PREFIXES = [
   "/api/stripe/webhook",
-  "/api/auth/callback",
-  "/auth/callback",
+  AUTH_CALLBACK_PATH,
+  AUTH_CALLBACK_LEGACY_PATH,
   "/auth/signout",
 ] as const;
 

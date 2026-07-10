@@ -3,13 +3,18 @@ import { cookies } from "next/headers";
 
 import type { Database } from "@/types/database";
 import type { UserProfile } from "@/types/database";
+import { ensureBillingProfile } from "@/lib/billing/profile";
+import {
+  getSupabasePublishableKey,
+  getSupabaseUrl,
+} from "@/lib/supabase/env";
 
 export async function createClient() {
   const cookieStore = await cookies();
 
   return createServerClient<Database>(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    getSupabaseUrl(),
+    getSupabasePublishableKey(),
     {
       cookies: {
         getAll() {
@@ -58,26 +63,13 @@ export async function getUserProfile(): Promise<UserProfile | null> {
   }
 
   const { data: profile } = await supabase
-    .from("users_profile")
-    .select("id, email, full_name, created_at, updated_at")
-    .eq("id", user.id)
-    .maybeSingle();
-
-  if (profile) {
-    return profile;
-  }
-
-  // Fallback when legacy `profiles` table exists without users_profile row yet
-  const { data: legacy } = await supabase
     .from("profiles")
     .select("id, email, full_name, created_at, updated_at")
     .eq("id", user.id)
     .maybeSingle();
 
-  return legacy;
+  return profile;
 }
-
-import { ensureBillingProfile } from "@/lib/billing/profile";
 
 /** Billing-aware profile (`profiles` table). */
 export async function getProfile() {

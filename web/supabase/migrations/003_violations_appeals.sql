@@ -77,7 +77,7 @@ create table if not exists public.appeals (
   supporting_docs_notes text,
   reason text,
   notes text,
-  created_by uuid references public.users_profile (id) on delete set null,
+  created_by uuid references public.profiles (id) on delete set null,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );
@@ -113,7 +113,7 @@ create table if not exists public.appeal_documents (
   size_bytes bigint,
   document_type text check (document_type in ('screenshot', 'invoice', 'authenticity', 'other')),
   metadata jsonb not null default '{}'::jsonb,
-  uploaded_by uuid references public.users_profile (id) on delete set null,
+  uploaded_by uuid references public.profiles (id) on delete set null,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );

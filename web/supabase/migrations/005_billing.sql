@@ -57,25 +57,31 @@ create trigger profiles_set_updated_at
   before update on public.profiles
   for each row execute function public.set_updated_at();
 
--- Backfill billing profiles from users_profile (001_initial greenfield)
-insert into public.profiles (
-  id,
-  email,
-  full_name,
-  plan_id,
-  subscription_status,
-  trial_ends_at
-)
-select
-  up.id,
-  up.email,
-  up.full_name,
-  'trial',
-  'trialing',
-  now() + interval '14 days'
-from public.users_profile up
-where not exists (select 1 from public.profiles p where p.id = up.id)
-on conflict (id) do nothing;
+-- Backfill billing profiles from users_profile when that legacy table still exists
+do $$
+begin
+  if to_regclass('public.users_profile') is not null then
+    insert into public.profiles (
+      id,
+      email,
+      full_name,
+      plan_id,
+      subscription_status,
+      trial_ends_at
+    )
+    select
+      up.id,
+      up.email,
+      up.full_name,
+      'trial',
+      'trialing',
+      now() + interval '14 days'
+    from public.users_profile up
+    where not exists (select 1 from public.profiles p where p.id = up.id)
+    on conflict (id) do nothing;
+  end if;
+end
+$$;
 
 alter table public.profiles enable row level security;
 

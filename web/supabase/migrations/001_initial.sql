@@ -1,5 +1,7 @@
 -- TikTok Shop Guard — initial auth & multi-tenant schema
--- Fresh installs: run this file first in the Supabase SQL editor.
+-- DEPRECATED for new installs: prefer 001_profiles.sql → 009_canonicalize_profiles_auth.sql.
+-- Canonical user table is public.profiles (not users_profile).
+-- This file no longer installs on_auth_user_created / handle_new_user (see 008 + 009).
 -- If you already ran 001_profiles.sql … 003_rls_and_shop_auth.sql, skip this file.
 
 create extension if not exists pgcrypto;
@@ -55,7 +57,7 @@ create index if not exists users_profile_email_idx on public.users_profile (emai
 
 create table if not exists public.shops (
   id uuid primary key default gen_random_uuid(),
-  owner_user_id uuid not null references public.users_profile (id) on delete restrict,
+  owner_user_id uuid not null references auth.users (id) on delete restrict,
   status public.shop_status not null default 'active',
   name text not null,
   platform text not null default 'tiktok_shop',
@@ -81,7 +83,7 @@ create index if not exists shops_status_idx on public.shops (status);
 
 create table if not exists public.shop_members (
   shop_id uuid not null references public.shops (id) on delete cascade,
-  user_id uuid not null references public.users_profile (id) on delete cascade,
+  user_id uuid not null references auth.users (id) on delete cascade,
   role text not null default 'member' check (role in ('owner', 'admin', 'member')),
   status public.user_status not null default 'active',
   created_at timestamptz not null default now(),
@@ -152,53 +154,11 @@ grant execute on function public.is_shop_admin(uuid) to authenticated;
 grant execute on function public.user_shop_ids() to authenticated;
 
 -- ---------------------------------------------------------------------------
--- Signup: profile + default shop + owner membership
+-- Signup trigger intentionally omitted here.
+-- Canonical handle_new_user lives in 008_billing_entitlements.sql / 009.
 -- ---------------------------------------------------------------------------
 
-create or replace function public.handle_new_user()
-returns trigger
-language plpgsql
-security definer
-set search_path = public
-as $$
-declare
-  v_shop_id uuid;
-  v_shop_name text;
-begin
-  insert into public.users_profile (id, email, full_name)
-  values (
-    new.id,
-    new.email,
-    coalesce(new.raw_user_meta_data->>'full_name', '')
-  )
-  on conflict (id) do update
-    set
-      email = excluded.email,
-      full_name = excluded.full_name,
-      updated_at = now();
-
-  v_shop_name := coalesce(
-    nullif(trim(new.raw_user_meta_data->>'shop_name'), ''),
-    'My Shop'
-  );
-
-  insert into public.shops (owner_user_id, name)
-  values (new.id, v_shop_name)
-  returning id into v_shop_id;
-
-  insert into public.shop_members (shop_id, user_id, role, status)
-  values (v_shop_id, new.id, 'owner', 'active')
-  on conflict (shop_id, user_id) do update
-    set role = 'owner', status = 'active', updated_at = now();
-
-  return new;
-end;
-$$;
-
 drop trigger if exists on_auth_user_created on auth.users;
-create trigger on_auth_user_created
-  after insert on auth.users
-  for each row execute function public.handle_new_user();
 
 -- Ensure owners are members when shops are created manually
 create or replace function public.handle_new_shop()

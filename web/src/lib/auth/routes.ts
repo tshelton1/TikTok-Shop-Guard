@@ -1,6 +1,15 @@
+import {
+  AUTH_CALLBACK_LEGACY_PATH,
+  AUTH_CALLBACK_PATH,
+} from "@/lib/supabase/env";
+
 export const GUEST_ONLY_ROUTES = ["/login", "/signup", "/forgot-password"] as const;
 
-export const AUTH_ROUTES = [...GUEST_ONLY_ROUTES, "/reset-password"] as const;
+export const AUTH_ROUTES = [
+  ...GUEST_ONLY_ROUTES,
+  "/reset-password",
+  "/auth/update-password",
+] as const;
 
 export const PROTECTED_ROUTE_PREFIXES = [
   "/dashboard",
@@ -12,10 +21,11 @@ export const PROTECTED_ROUTE_PREFIXES = [
   "/api/violations",
 ] as const;
 
+/** Routes that must bypass auth redirects (webhooks + auth callbacks + signout). */
 export const PUBLIC_API_PREFIXES = [
   "/api/stripe/webhook",
-  "/api/auth/callback",
-  "/auth/callback",
+  AUTH_CALLBACK_PATH,
+  AUTH_CALLBACK_LEGACY_PATH,
   "/auth/signout",
 ] as const;
 

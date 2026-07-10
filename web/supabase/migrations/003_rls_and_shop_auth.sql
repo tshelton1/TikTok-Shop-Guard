@@ -54,6 +54,7 @@ $$;
 -- Signup: create app user row + default shop membership
 -- ---------------------------------------------------------------------------
 
+-- Membership is created by on_shop_created → handle_new_shop (do not insert shop_members here).
 create or replace function public.handle_new_user()
 returns trigger
 language plpgsql
@@ -61,7 +62,6 @@ security definer
 set search_path = public
 as $$
 declare
-  v_shop_id uuid;
   v_shop_name text;
 begin
   insert into public.profiles (id, email, full_name)
@@ -69,11 +69,12 @@ begin
     new.id,
     new.email,
     coalesce(new.raw_user_meta_data->>'full_name', '')
-  );
-
-  insert into public.users (id, status, role)
-  values (new.id, 'active', 'owner')
-  on conflict (id) do nothing;
+  )
+  on conflict (id) do update
+    set
+      email = excluded.email,
+      full_name = excluded.full_name,
+      updated_at = now();
 
   v_shop_name := coalesce(
     nullif(trim(new.raw_user_meta_data->>'shop_name'), ''),
@@ -81,16 +82,16 @@ begin
   );
 
   insert into public.shops (owner_user_id, name)
-  values (new.id, v_shop_name)
-  returning id into v_shop_id;
-
-  insert into public.shop_members (shop_id, user_id, role, status)
-  values (v_shop_id, new.id, 'owner', 'active')
-  on conflict do nothing;
+  values (new.id, v_shop_name);
 
   return new;
 end;
 $$;
+
+drop trigger if exists on_auth_user_created on auth.users;
+create trigger on_auth_user_created
+  after insert on auth.users
+  for each row execute function public.handle_new_user();
 
 -- Ensure shop owners are always members when a shop is created manually
 create or replace function public.handle_new_shop()

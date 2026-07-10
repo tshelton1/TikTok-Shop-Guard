@@ -1,13 +1,18 @@
 import { createBrowserClient } from "@supabase/ssr";
 
 import type { Database } from "@/types/database";
+import {
+  getSupabasePublishableKey,
+  getSupabaseUrl,
+} from "@/lib/supabase/env";
 
 /**
  * Browser Supabase client for Client Components (auth forms, sign-out).
+ * Call inside event handlers / effects — not during render.
  */
 export function createClient() {
   return createBrowserClient<Database>(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    getSupabaseUrl(),
+    getSupabasePublishableKey(),
   );
 }

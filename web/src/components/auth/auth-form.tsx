@@ -18,6 +18,10 @@ import { getSafeRedirectPath } from "@/lib/auth/redirect";
 import { showError, showSuccess } from "@/lib/toast";
 import { createClient } from "@/lib/supabase/client";
 import {
+  getAuthCallbackUrl,
+  getPasswordUpdateUrl,
+} from "@/lib/supabase/env";
+import {
   hasFieldErrors,
   validateEmail,
   validateLoginForm,
@@ -64,7 +68,6 @@ export function AuthForm({ mode }: AuthFormProps) {
   const redirect = getSafeRedirectPath(searchParams.get("redirect"));
   const selectedPlan = searchParams.get("plan");
   const authError = searchParams.get("error");
-  const supabase = createClient();
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -112,7 +115,7 @@ export function AuthForm({ mode }: AuthFormProps) {
     }
 
     try {
-      const authCallbackUrl = `${window.location.origin}/api/auth/callback`;
+      const supabase = createClient();
 
       if (mode === "login") {
         const { error: signInError } = await supabase.auth.signInWithPassword({
@@ -135,7 +138,8 @@ export function AuthForm({ mode }: AuthFormProps) {
               full_name: fullName,
               shop_name: shopName.trim() || undefined,
             },
-            emailRedirectTo: `${authCallbackUrl}?next=${encodeURIComponent(redirect)}`,
+            // Canonical exchange is /api/auth/callback; /auth/callback redirects there.
+            emailRedirectTo: getAuthCallbackUrl(window.location.origin),
           },
         });
         if (signUpError) throw signUpError;
@@ -153,16 +157,29 @@ export function AuthForm({ mode }: AuthFormProps) {
       const { error: resetError } = await supabase.auth.resetPasswordForEmail(
         email,
         {
-          redirectTo: `${authCallbackUrl}?next=${encodeURIComponent("/reset-password")}`,
+          redirectTo: getPasswordUpdateUrl(window.location.origin),
         },
       );
       if (resetError) throw resetError;
       setMessage("Password reset link sent. Check your inbox.");
       showSuccess("Password reset link sent.");
     } catch (err) {
-      const message = err instanceof Error ? err.message : "Something went wrong.";
-      setError(message);
-      showError(message);
+      const message =
+        err instanceof Error ? err.message : "Something went wrong.";
+      const networkFailure =
+        message === "Failed to fetch" ||
+        message === "Load failed" ||
+        message === "Load Failed" ||
+        message.toLowerCase().includes("networkerror");
+      const friendly = networkFailure
+        ? "Could not reach Supabase Auth. Use NEXT_PUBLIC_SUPABASE_ANON_KEY (JWT anon key) in .env.local, restart the dev server, and allow supabase.co in any content blockers."
+        : message.includes("Database error saving new user")
+          ? "Account creation failed in the database (signup trigger). Run migration 009b_fix_profiles_user_id.sql in the Supabase SQL editor, then try again."
+          : message.includes("null value in column \"user_id\"")
+            ? "Account creation failed: profiles.user_id is required. Run migration 009b_fix_profiles_user_id.sql in the Supabase SQL editor, then try again."
+            : message;
+      setError(friendly);
+      showError(friendly);
     } finally {
       setLoading(false);
     }

@@ -1,7 +1,7 @@
 import type { AppealDocumentType } from "@/types/appeals";
 
 /** Private Supabase Storage bucket for appeal evidence files. */
-export const APPEAL_DOCUMENTS_BUCKET = "appeal-documents";
+export const APPEAL_DOCUMENTS_BUCKET = "appeal-uploads";
 
 export const MAX_UPLOAD_BYTES = 10 * 1024 * 1024; // 10 MB
 

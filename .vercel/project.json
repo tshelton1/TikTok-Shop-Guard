@@ -1,0 +1,16 @@
+{
+  "projectId": "prj_RRUzw1PQ6Bm9InS8rih4oL86fpAx",
+  "orgId": "team_aEBrqmprxry8oKOcIDVyRYgx",
+  "projectName": "tik-tok-shop-guard",
+  "settings": {
+    "createdAt": 1783623775035,
+    "framework": "nextjs",
+    "devCommand": null,
+    "installCommand": null,
+    "buildCommand": null,
+    "outputDirectory": null,
+    "rootDirectory": "web",
+    "directoryListing": false,
+    "nodeVersion": "24.x"
+  }
+}

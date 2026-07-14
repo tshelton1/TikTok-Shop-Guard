@@ -19,6 +19,12 @@ export function Footer() {
           <Link href="/signup" className="hover:text-foreground">
             Sign up
           </Link>
+          <Link href="/privacy" className="hover:text-foreground">
+            Privacy
+          </Link>
+          <Link href="/terms" className="hover:text-foreground">
+            Terms
+          </Link>
         </div>
 
         <p className="text-sm text-muted-foreground">
